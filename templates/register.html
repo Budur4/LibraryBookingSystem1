@@ -1,0 +1,116 @@
+<div class="mb-3">
+  <label class="form-label">Email</label>
+  <input
+    name="email"
+    type="email"
+    class="form-control"
+    placeholder="example@gmail.com"
+    required
+  />
+  <!-- تعليمات الإيميل دائمًا -->
+  <div class="form-text text-muted" id="emailGuide">
+    ✅ Format example: example@gmail.com
+  </div>
+  <!-- رسالة الخطأ -->
+  <div
+    id="emailError"
+    style="color: red; font-size: 0.9em; display: none"
+  ></div>
+</div>
+
+<div class="mb-3">
+  <label class="form-label">Password</label>
+  <input
+    name="password"
+    type="password"
+    class="form-control"
+    placeholder="At least 8 characters"
+    required
+    minlength="8"
+  />
+  <!-- تعليمات الباسورد دائمًا -->
+  <div class="form-text text-muted" id="passwordGuide">
+    ✅ Minimum 8 characters
+  </div>
+</div>
+
+<div class="mb-3">
+  <label class="form-label">Confirm Password</label>
+  <input
+    name="confirm_password"
+    type="password"
+    class="form-control"
+    placeholder="Confirm password"
+    required
+  />
+  <!-- رسالة الخطأ لتأكيد الباسورد -->
+  <div
+    id="passwordError"
+    style="color: red; font-size: 0.9em; display: none"
+  ></div>
+</div>
+
+<script>
+  const form = document.getElementById("registerForm");
+  const emailInput = form.querySelector('[name="email"]');
+  const emailError = document.getElementById("emailError");
+  const emailGuide = document.getElementById("emailGuide");
+
+  const passwordInput = form.querySelector('[name="password"]');
+  const confirmInput = form.querySelector('[name="confirm_password"]');
+  const passwordError = document.getElementById("passwordError");
+  const passwordGuide = document.getElementById("passwordGuide");
+
+  function validateEmail(email) {
+    if (!email.includes("@")) return "❌ Email must contain @";
+    const parts = email.split("@");
+    if (parts.length !== 2 || parts[1].length === 0)
+      return "❌ Email must contain domain";
+    if (!parts[1].includes("."))
+      return "❌ Email must contain extension (e.g., .com)";
+    return "";
+  }
+
+  function validatePasswords(pwd, cpwd) {
+    if (pwd !== cpwd) return "❌ Passwords do not match";
+    if (pwd.length < 8) return "❌ Password must be at least 8 characters";
+    return "";
+  }
+
+  // تحقق حي أثناء الكتابة
+  emailInput.addEventListener("input", () => {
+    const msg = validateEmail(emailInput.value);
+    emailError.style.display = msg ? "block" : "none";
+    emailError.textContent = msg;
+    emailGuide.style.display = msg ? "none" : "block";
+  });
+
+  confirmInput.addEventListener("input", () => {
+    const msg = validatePasswords(passwordInput.value, confirmInput.value);
+    passwordError.style.display = msg ? "block" : "none";
+    passwordError.textContent = msg;
+    passwordGuide.style.display = msg ? "none" : "block";
+  });
+
+  passwordInput.addEventListener("input", () => {
+    const msg = validatePasswords(passwordInput.value, confirmInput.value);
+    passwordError.style.display = msg ? "block" : "none";
+    passwordError.textContent = msg;
+    passwordGuide.style.display = msg ? "none" : "block";
+  });
+
+  // تحقق عند الإرسال
+  form.addEventListener("submit", (e) => {
+    const emailMsg = validateEmail(emailInput.value);
+    const pwdMsg = validatePasswords(passwordInput.value, confirmInput.value);
+    if (emailMsg || pwdMsg) {
+      e.preventDefault();
+      emailError.style.display = emailMsg ? "block" : "none";
+      emailError.textContent = emailMsg || "";
+      passwordError.style.display = pwdMsg ? "block" : "none";
+      passwordError.textContent = pwdMsg || "";
+      if (emailMsg) emailInput.focus();
+      else if (pwdMsg) confirmInput.focus();
+    }
+  });
+</script>

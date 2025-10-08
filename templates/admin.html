@@ -1,0 +1,156 @@
+{% extends "base.html" %} {% block title %}Admin Dashboard{% endblock %} {%
+block content %}
+<div class="d-flex flex-column mb-4">
+  <h1>⚙️ Admin Panel</h1>
+  <p class="text-muted">Manage Admins, Users, and Bookings</p>
+</div>
+
+<!-- Add Resource -->
+<div class="card p-3 mb-4">
+  <h5 class="mb-3">➕ Add Resource</h5>
+  <form method="POST" class="row g-2">
+    <div class="col-md-3">
+      <input name="title" class="form-control" placeholder="Title" required />
+    </div>
+    <div class="col-md-2">
+      <select name="type" class="form-select" required>
+        <option value="room">Room</option>
+        <option value="book">Book</option>
+      </select>
+    </div>
+    <div class="col-md-3">
+      <input
+        name="capacity"
+        class="form-control"
+        placeholder="Capacity"
+        type="number"
+        min="1"
+      />
+    </div>
+    <div class="col-md-4">
+      <input
+        name="description"
+        class="form-control"
+        placeholder="Description"
+      />
+    </div>
+    <div class="col-12">
+      <button class="btn btn-warning mt-2" type="submit">Add Resource</button>
+    </div>
+  </form>
+</div>
+
+<!-- Resources -->
+<h5 class="mb-3">📚 All Resources</h5>
+<div class="card p-3 mb-4">
+  <div class="table-responsive">
+    <table class="table table-striped align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>ID</th>
+          <th>Title</th>
+          <th>Type</th>
+          <th>Capacity</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in resources %}
+        <tr>
+          <td>{{ r.id }}</td>
+          <td>{{ r.title }}</td>
+          <td>{{ r.type }}</td>
+          <td>{{ r.capacity }}</td>
+          <td>
+            <form
+              method="POST"
+              action="{{ url_for('admin_delete_resource', resource_id=r.id) }}"
+              onsubmit="return confirm('Delete resource?')"
+            >
+              <button class="btn btn-sm btn-danger">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Users -->
+<h5 class="mb-3">👥 Users</h5>
+<div class="card p-3 mb-4">
+  <div class="table-responsive">
+    <table class="table table-striped align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>ID</th>
+          <th>Username</th>
+          <th>Email</th>
+          <th>Admin</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td>{{ u.id }}</td>
+          <td>{{ u.username }}</td>
+          <td>{{ u.email }}</td>
+          <td>{% if u.is_admin %}✅{% else %}❌{% endif %}</td>
+          <td>
+            {% if not u.is_admin %}
+            <form
+              method="POST"
+              action="{{ url_for('delete_user', user_id=u.id) }}"
+              onsubmit="return confirm('Delete user {{ u.username }}?')"
+            >
+              <button class="btn btn-sm btn-danger">Delete</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Bookings -->
+<h5 class="mb-3">📅 Bookings</h5>
+
+<!-- Export Buttons -->
+<div class="mb-3">
+  <a href="{{ url_for('export_csv') }}" class="btn btn-primary me-2"
+    >Export CSV</a
+  >
+  <a href="{{ url_for('export_pdf') }}" class="btn btn-danger">Export PDF</a>
+</div>
+
+<div class="card p-3">
+  <div class="table-responsive">
+    <table class="table table-striped align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>ID</th>
+          <th>User</th>
+          <th>Resource</th>
+          <th>Start</th>
+          <th>End</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in bookings %}
+        <tr>
+          <td>{{ b.id }}</td>
+          <td>{{ b.user.username }}</td>
+          <td>{{ b.resource.title }}</td>
+          <td>{{ b.start_time.strftime('%Y-%m-%d %H:%M') }}</td>
+          <td>{{ b.end_time.strftime('%Y-%m-%d %H:%M') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

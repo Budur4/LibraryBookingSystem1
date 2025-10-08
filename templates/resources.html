@@ -1,0 +1,102 @@
+{% extends "base.html" %} {% block title %}Resources{% endblock %} {% block content %}
+<h2 class="text-center mb-4">📖 Available Resources</h2>
+
+{% if recommended_resources and not current_is_admin %}
+<div class="mb-4">
+    <h5 class="text-center text-muted mb-3">Recommended for you</h5>
+    <div class="row g-3 justify-content-center">
+        {% for r in recommended_resources %}
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+            <div class="card p-3 text-center h-100">
+                <h5 class="mb-1">{{ r.title }}</h5>
+                <p class="small text-muted mb-1">Type: {{ r.type }}</p>
+                <p class="small text-muted">
+                    {{ r.description[:90] }}{% if r.description|length > 90 %}...{% endif %}
+                </p>
+                <p class="mt-2"><strong>Capacity:</strong> {{ r.capacity }}</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<div class="mb-4">
+    <input id="searchBox" class="form-control" placeholder="🔍 Search by title or type..." onkeyup="filterCards()" />
+</div>
+
+<div class="row g-3" id="resourcesContainer">
+    {% for r in resources %}
+    <div class="col-12 col-sm-6 col-md-4 col-lg-3 resource-card">
+        <div class="card p-3 h-100 d-flex flex-column">
+            <div>
+                <h5 class="mb-1">{{ r.title }}</h5>
+                <p class="small text-muted mb-1">Type: {{ r.type }}</p>
+                <p class="small text-muted">
+                    {{ r.description[:110] }}{% if r.description|length > 110 %}...{% endif %}
+                </p>
+                <p class="mt-2"><strong>Capacity:</strong> {{ r.capacity }}</p>
+            </div>
+
+            {% if not current_is_admin %}
+            <form method="POST" action="{{ url_for('book_resource', resource_id=r.id) }}" class="mt-auto">
+                <label class="form-label mt-2 small">Start</label>
+                <input type="datetime-local" name="start" class="form-control mb-2" required />
+                <label class="form-label small">End</label>
+                <input type="datetime-local" name="end" class="form-control mb-2" required />
+                <button class="btn btn-primary w-100 mt-1" type="submit">
+          📅 Book Now
+        </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if not current_is_admin %}
+<hr class="my-5" />
+
+<h4 class="mb-3 text-center">🗂️ My Bookings</h4>
+{% if my_bookings %}
+<div class="table-responsive">
+    <table class="table align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Resource</th>
+                <th>Start</th>
+                <th>End</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for b in my_bookings %}
+            <tr>
+                <td>{{ b.resource.title }}</td>
+                <td>{{ b.start_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>{{ b.end_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>
+                    <form method="POST" action="{{ url_for('cancel_booking', booking_id=b.id) }}">
+                        <button class="btn btn-danger btn-sm">Cancel</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p class="text-center text-muted">You have no bookings yet.</p>
+{% endif %} {% endif %}
+
+<script>
+    function filterCards() {
+        const q = document.getElementById("searchBox").value.toLowerCase();
+        document.querySelectorAll(".resource-card").forEach((card) => {
+            const title = card.querySelector("h5").innerText.toLowerCase();
+            const type = card.querySelector(".text-muted").innerText.toLowerCase();
+            card.style.display = title.includes(q) || type.includes(q) ? "" : "none";
+        });
+    }
+</script>
+{% endblock %}
