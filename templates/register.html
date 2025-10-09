@@ -5,6 +5,25 @@ content %}
     <h2 class="text-center mb-4">Create an Account</h2>
 
     <form id="registerForm" method="POST" action="{{ url_for('register') }}">
+      <!-- Username -->
+      <div class="mb-3">
+        <label class="form-label">Username</label>
+        <input
+          name="username"
+          type="text"
+          class="form-control"
+          placeholder="Enter username"
+          required
+        />
+        <div class="form-text text-muted" id="usernameGuide">
+          ✅ Choose a unique username (letters, numbers, or underscores)
+        </div>
+        <div
+          id="usernameError"
+          style="color: red; font-size: 0.9em; display: none"
+        ></div>
+      </div>
+
       <!-- Email -->
       <div class="mb-3">
         <label class="form-label">Email</label>
@@ -78,10 +97,31 @@ content %}
 <!-- ✅ JavaScript validation -->
 <script>
   const form = document.getElementById("registerForm");
+
+  // Username
+  const usernameInput = form.querySelector('[name="username"]');
+  const usernameError = document.getElementById("usernameError");
+  const usernameGuide = document.getElementById("usernameGuide");
+
+  function validateUsername(username) {
+    if (username.length < 3)
+      return "❌ Username must be at least 3 characters long";
+    if (!/^[a-zA-Z0-9_]+$/.test(username))
+      return "❌ Only letters, numbers, and underscores are allowed";
+    return "";
+  }
+
+  usernameInput.addEventListener("input", () => {
+    const msg = validateUsername(usernameInput.value);
+    usernameError.style.display = msg ? "block" : "none";
+    usernameError.textContent = msg;
+    usernameGuide.style.display = msg ? "none" : "block";
+  });
+
+  // Email + Password validation (same as before)
   const emailInput = form.querySelector('[name="email"]');
   const emailError = document.getElementById("emailError");
   const emailGuide = document.getElementById("emailGuide");
-
   const passwordInput = form.querySelector('[name="password"]');
   const confirmInput = form.querySelector('[name="confirm_password"]');
   const passwordError = document.getElementById("passwordError");
@@ -124,16 +164,23 @@ content %}
     passwordGuide.style.display = msg ? "none" : "block";
   });
 
+  // Form submit validation
   form.addEventListener("submit", (e) => {
+    const usernameMsg = validateUsername(usernameInput.value);
     const emailMsg = validateEmail(emailInput.value);
     const pwdMsg = validatePasswords(passwordInput.value, confirmInput.value);
-    if (emailMsg || pwdMsg) {
+
+    if (usernameMsg || emailMsg || pwdMsg) {
       e.preventDefault();
+      usernameError.style.display = usernameMsg ? "block" : "none";
+      usernameError.textContent = usernameMsg || "";
       emailError.style.display = emailMsg ? "block" : "none";
       emailError.textContent = emailMsg || "";
       passwordError.style.display = pwdMsg ? "block" : "none";
       passwordError.textContent = pwdMsg || "";
-      if (emailMsg) emailInput.focus();
+
+      if (usernameMsg) usernameInput.focus();
+      else if (emailMsg) emailInput.focus();
       else if (pwdMsg) confirmInput.focus();
     }
   });
