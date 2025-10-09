@@ -11,7 +11,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 
-# إعداد قاعدة البيانات
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'library.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -22,7 +21,7 @@ with app.app_context():
     admin = User.query.filter_by(username="admin").first()
     if admin:
         if not admin.password_hash or admin.check_password("admin123") is False:
-            admin.set_password("admin123")  # تعيين باسورد جديد صحيح
+            admin.set_password("admin123")  
             db.session.commit()
             print("Admin password updated.")
         else:
@@ -34,7 +33,7 @@ with app.app_context():
         db.session.commit()
         print("Admin created successfully.")
 
-# ----------------- حماية الصفحات -----------------
+
 def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -44,7 +43,6 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated
 
-# ----------------- إنشاء الأدمن تلقائيًا -----------------
 with app.app_context():
     db.create_all()
     if not User.query.filter_by(username="admin").first():
@@ -53,7 +51,6 @@ with app.app_context():
         db.session.add(admin)
         db.session.commit()
 
-# ----------------- سياق القالب -----------------
 @app.context_processor
 def inject_session_user():
     uid = session.get('user_id')
@@ -77,14 +74,12 @@ def inject_session_user():
             )
     return dict(logged_in=False, current_username=None, current_is_admin=False, recommended_resources=[])
 
-# ----------------- الصفحة الرئيسية -----------------
 @app.route('/')
 def home():
     if 'user_id' in session:
         return redirect(url_for('resources_page'))
     return redirect(url_for('login'))
 
-# ----------------- التسجيل -----------------
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -113,9 +108,8 @@ def register():
             flash('❌ Username already taken!', 'danger')
             return redirect(url_for('register'))
 
-        # إنشاء المستخدم وتعيين password_hash
         new_user = User(username=username, email=email, is_admin=False)
-        new_user.set_password(password)  # هذا ينشئ password_hash وليس الحقل password
+        new_user.set_password(password)  
 
         db.session.add(new_user)
         db.session.commit()
@@ -125,7 +119,6 @@ def register():
 
     return render_template('register.html')
 
-# ----------------- تسجيل الدخول -----------------
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -156,7 +149,6 @@ def login():
 
     return render_template('login.html')
 
-# ----------------- نسيت كلمة المرور -----------------
 @app.route('/forgot_password', methods=['GET', 'POST'])
 def forgot_password():
     if request.method == 'POST':
@@ -176,14 +168,12 @@ def forgot_password():
 
     return render_template('forgot_password.html')
 
-# ----------------- تسجيل الخروج -----------------
 @app.route('/logout')
 def logout():
     session.clear()
     flash('You have been logged out.', 'info')
     return redirect(url_for('login'))
 
-# ----------------- تغيير كلمة المرور -----------------
 @app.route('/change_password', methods=['GET', 'POST'])
 @login_required
 def change_password():
@@ -213,15 +203,31 @@ def change_password():
 
     return render_template('change_password.html')
 
-# ----------------- صفحة الموارد -----------------
-@app.route('/resources')
+@app.route("/resources")
 @login_required
 def resources_page():
-    resources = Resource.query.order_by(Resource.type, Resource.title).all()
-    my_bookings = Booking.query.filter_by(user_id=session['user_id']).all()
-    return render_template('resources.html', resources=resources, my_bookings=my_bookings)
+    user_id = session.get("user_id")
 
-# ----------------- لوحة الأدمن -----------------
+    if not user_id:
+        return redirect(url_for("login"))
+
+    current_user = User.query.get(user_id)
+
+    resources = Resource.query.all()
+
+    my_bookings = Booking.query.filter_by(user_id=user_id).all()
+
+    booked_resource_ids = [b.resource_id for b in my_bookings]
+
+    return render_template(
+        "resources.html",
+        resources=resources,
+        my_bookings=my_bookings,
+        booked_resource_ids=booked_resource_ids,
+        current_is_admin=current_user.is_admin,
+        all_bookings=Booking.query.all()
+    )
+
 @app.route('/admin', methods=['GET', 'POST'])
 @login_required
 def admin_panel():
@@ -249,7 +255,6 @@ def admin_panel():
     bookings = Booking.query.order_by(Booking.start_time.desc()).all()
     return render_template('admin.html', users=users, resources=resources, bookings=bookings)
 
-# ----------------- الحجز -----------------
 @app.route('/resource/book/<int:resource_id>', methods=['POST'])
 @login_required
 def book_resource(resource_id):
@@ -264,7 +269,6 @@ def book_resource(resource_id):
     flash(f'✅ "{resource.title}" booked successfully!', 'success')
     return redirect(url_for('resources_page'))
 
-# ----------------- إلغاء الحجز -----------------
 @app.route('/cancel_booking/<int:booking_id>', methods=['POST'])
 @login_required
 def cancel_booking(booking_id):
@@ -277,7 +281,6 @@ def cancel_booking(booking_id):
         flash('✅ Booking canceled.', 'success')
     return redirect(url_for('resources_page'))
 
-# ----------------- حذف مورد -----------------
 @app.route('/admin/resource/delete/<int:resource_id>', methods=['POST'])
 @login_required
 def admin_delete_resource(resource_id):
@@ -291,7 +294,6 @@ def admin_delete_resource(resource_id):
     flash(f'✅ Resource "{r.title}" deleted.', 'success')
     return redirect(url_for('admin_panel'))
 
-# ----------------- حذف مستخدم -----------------
 @app.route('/admin/delete_user/<int:user_id>', methods=['POST'])
 @login_required
 def delete_user(user_id):
@@ -316,7 +318,6 @@ def delete_user(user_id):
     flash(f'✅ User "{user.username}" deleted successfully!', 'success')
     return redirect(url_for('admin_panel'))
 
-# ----------------- تصدير CSV -----------------
 @app.route('/export/csv')
 @login_required
 def export_csv():
@@ -331,7 +332,6 @@ def export_csv():
     output.headers["Content-type"] = "text/csv"
     return output
 
-# ----------------- تصدير PDF -----------------
 @app.route('/export/pdf')
 @login_required
 def export_pdf():
@@ -357,6 +357,5 @@ def export_pdf():
     })
 
 
-# ----------------- تشغيل السيرفر -----------------
 if __name__ == "__main__":
     app.run(debug=True)
