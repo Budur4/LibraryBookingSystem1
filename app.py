@@ -318,20 +318,6 @@ def delete_user(user_id):
     flash(f'✅ User "{user.username}" deleted successfully!', 'success')
     return redirect(url_for('admin_panel'))
 
-@app.route('/export/csv')
-@login_required
-def export_csv():
-    bookings = Booking.query.all()
-    si = BytesIO()
-    cw = csv.writer(si)
-    cw.writerow(['ID', 'User', 'Resource', 'Start', 'End'])
-    for b in bookings:
-        cw.writerow([b.id, b.user.username, b.resource.title, b.start_time, b.end_time])
-    output = make_response(si.getvalue())
-    output.headers["Content-Disposition"] = "attachment; filename=bookings.csv"
-    output.headers["Content-type"] = "text/csv"
-    return output
-
 @app.route('/export/pdf')
 @login_required
 def export_pdf():
@@ -356,6 +342,33 @@ def export_pdf():
         'Content-Disposition': 'attachment; filename=bookings.pdf'
     })
 
+from io import StringIO
+
+@app.route('/export/csv')
+@login_required
+def export_csv():
+    bookings = Booking.query.all()
+    si = StringIO()  # ✅ استخدمي StringIO بدل BytesIO
+    cw = csv.writer(si)
+
+    # Write header
+    cw.writerow(['ID', 'User', 'Resource', 'Start', 'End'])
+
+    # Write data rows
+    for b in bookings:
+        cw.writerow([
+            b.id,
+            b.user.username if b.user else '',
+            b.resource.title if b.resource else '',
+            b.start_time.strftime("%Y-%m-%d %H:%M"),
+            b.end_time.strftime("%Y-%m-%d %H:%M")
+        ])
+
+    # Prepare response
+    response = make_response(si.getvalue())
+    response.headers["Content-Disposition"] = "attachment; filename=bookings.csv"
+    response.headers["Content-type"] = "text/csv"
+    return response
 
 if __name__ == "__main__":
     app.run(debug=True)
